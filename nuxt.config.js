@@ -52,7 +52,7 @@ export default {
 
   proxy: {
     '/api': {
-      target: `https://localhost:5000/api`,
+      target: `https://localhost:6000/api`,
       pathRewrite: {
         '^/api': '/',
       },

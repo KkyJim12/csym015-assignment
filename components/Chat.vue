@@ -2,7 +2,7 @@
   <v-card class="px-5 py-2 h-full d-flex flex-column justify-space-between"
     ><h1>Chat Bot</h1>
     <v-sheet
-      class="px-5 py-5 d-flex flex-column"
+      class="px-5 py-5 d-flex flex-column overflow-y-auto"
       color="secondary"
       elevation="1"
       height="80%"
@@ -46,7 +46,9 @@ export default {
   },
   data() {
     return {
-      count: 0,
+      storeDestination: [],
+      storeDate: [],
+      step: 0,
       botLoading: false,
       messages: [],
       messageBox: '',
@@ -55,13 +57,19 @@ export default {
     }
   },
   methods: {
+    resetBot() {
+      this.storeDestination = []
+      this.storeDate = []
+      this.step = 0
+      this.messages = []
+    },
     startAsking() {
       this.botLoading = true
       this.ask =
         'Hi, here is a trip advisor bot. We are here to plan the best trip for you. Firstly Please type the place you want to go. you can place the destinations as many as you want by using "," to seperate each destination.'
       this.messages.push({ data: this.ask, type: 'bot' })
       this.ask = ''
-      this.count++
+      this.step++
       this.botLoading = false
     },
     sendMessage() {
@@ -76,25 +84,56 @@ export default {
     botReply(message) {
       this.loading()
       this.processing(message)
-      this.reply = 'Hi, I am bot'
-      this.messages.push({ data: this.reply, type: 'bot' })
-      this.reply = ''
     },
     loading() {},
     processing(message) {
-      switch (this.count) {
+      switch (this.step) {
         case 1:
           this.question1(message)
+          break
+        case 2:
+          this.question2(message)
+          break
+        case 3:
+          this.question3()
+          break
       }
     },
-    async question1(message) {
-      try {
-        let response = await this.$axios.post('/api/destinations', {
-          message: message,
-        })
-        console.log(response.data)
-      } catch (error) {
-        console.log(error.response)
+    question1(message) {
+      this.storeDestination = message.split(',')
+      this.reply =
+        'So you are going to ' +
+        message +
+        '. Now we want the date you want to go. You can use - for if you want to go many days. For ex, 28/10/2022-30/10/2022'
+      this.messages.push({ data: this.reply, type: 'bot' })
+      this.reply = ''
+      this.step++
+    },
+    question2(message) {
+      this.storeDate = message.split('-')
+      this.reply =
+        'So you are going to ' +
+        this.storeDestination.join(',') +
+        ' during ' +
+        message +
+        '. Please type "Confirm" to process the trip. Or type "Reset to start new chat bot.'
+      this.messages.push({ data: this.reply, type: 'bot' })
+      this.reply = ''
+      this.step++
+    },
+    question3(message) {
+      if (message === 'Confirm') {
+        console.log('api')
+        this.callApi()
+      } else if (message === 'Reset') {
+        this.resetBot()
+      } else {
+        this.reply =
+          'We cannot understand ' +
+          message +
+          '. Please type "Confirm" or "Reset correctly"'
+        this.messages.push({ data: this.reply, type: 'bot' })
+        this.reply = ''
       }
     },
   },
