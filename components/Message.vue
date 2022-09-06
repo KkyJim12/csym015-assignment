@@ -1,5 +1,6 @@
 <template>
   <v-alert
+    max-width="45%"
     :class="message.type === 'user' ? 'mr-auto' : 'ml-auto'"
     :icon="message.type === 'user' ? 'mdi-account' : 'mdi-robot'"
     text
