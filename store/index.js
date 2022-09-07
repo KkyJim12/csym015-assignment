@@ -6,6 +6,7 @@ export const state = () => ({
     },
   ],
   forecasts: [],
+  weatherByDestination: [],
 })
 
 export const mutations = {
@@ -15,6 +16,9 @@ export const mutations = {
   storeForecasts(state, forecasts) {
     state.forecasts = forecasts
   },
+  storeWeather(state, weather) {
+    state.weatherByDestination = weather
+  },
 }
 
 export const actions = {
@@ -23,5 +27,8 @@ export const actions = {
   },
   getForecasts(context, forecasts) {
     context.commit('storeForecasts', forecasts)
+  },
+  checkWeather(context, weather) {
+    context.commit('storeWeather', weather)
   },
 }
