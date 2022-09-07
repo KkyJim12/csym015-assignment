@@ -27,7 +27,7 @@ export default {
   css: [],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  plugins: ['~/plugins/gmap.js'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -36,12 +36,20 @@ export default {
   buildModules: [
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
+    '@nuxtjs/moment',
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
+    [
+      'nuxt-gmaps',
+      {
+        key: 'AIzaSyAMGJ-1QIKCEJ99HPGuVxJdBK146vE0M-M',
+        //you can use libraries: ['places']
+      },
+    ],
   ],
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
@@ -52,7 +60,7 @@ export default {
 
   proxy: {
     '/api': {
-      target: `https://localhost:6000/api`,
+      target: `https://localhost:5000/api`,
       pathRewrite: {
         '^/api': '/',
       },

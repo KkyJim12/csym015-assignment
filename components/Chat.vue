@@ -41,13 +41,16 @@
 
 <script>
 export default {
+  computed: {
+    locations() {
+      return this.$store.state.destinations
+    },
+  },
   mounted() {
     this.startAsking()
   },
   data() {
     return {
-      storeDestination: [],
-      storeDate: [],
       step: 0,
       botLoading: false,
       messages: [],
@@ -57,83 +60,95 @@ export default {
     }
   },
   methods: {
-    resetBot() {
-      this.storeDestination = []
-      this.storeDate = []
-      this.step = 0
-      this.messages = []
-    },
-    startAsking() {
-      this.botLoading = true
-      this.ask =
-        'Hi, here is a trip advisor bot. We are here to plan the best trip for you. Firstly Please type the place you want to go. you can place the destinations as many as you want by using "," to seperate each destination.'
-      this.messages.push({ data: this.ask, type: 'bot' })
-      this.ask = ''
-      this.step++
-      this.botLoading = false
-    },
+    // User send message to bot
     sendMessage() {
       // Check if input is empty
       if (this.messageBox === '' || this.botLoading) {
         return
       }
       this.messages.push({ data: this.messageBox, type: 'user' })
-      this.botReply(this.messageBox)
+      this.botProcessing(this.messageBox)
       this.messageBox = ''
     },
-    botReply(message) {
-      this.loading()
+    // Reinitial chat bot
+    resetBot() {
+      this.storeDestination = []
+      this.storeDate = []
+      this.step = 0
+      this.messages = []
+      this.startAsking()
+    },
+    // Probe question
+    startAsking() {
+      this.botLoading = true
+      this.ask =
+        'Hi, I am a bot climate advisor. I will forecast climate of locations you want to know. You can type the locations on the chat. You can use "," for many locations.'
+      this.messages.push({ data: this.ask, type: 'bot' })
+      this.ask = ''
+      this.step++
+      this.botLoading = false
+    },
+    // Loading ui when bot is replying
+    botProcessing(message) {
       this.processing(message)
     },
-    loading() {},
+    // Bot replying
+    botReply(message) {
+      this.reply = message
+      this.messages.push({ data: this.reply, type: 'bot' })
+      this.reply = ''
+    },
+    // Case in each step
     processing(message) {
       switch (this.step) {
         case 1:
-          this.question1(message)
+          this.step1(message)
           break
         case 2:
-          this.question2(message)
-          break
-        case 3:
-          this.question3()
+          this.step2(message)
           break
       }
     },
-    question1(message) {
-      this.storeDestination = message.split(',')
-      this.reply =
-        'So you are going to ' +
-        message +
-        '. Now we want the date you want to go. You can use - for if you want to go many days. For ex, 28/10/2022-30/10/2022'
-      this.messages.push({ data: this.reply, type: 'bot' })
-      this.reply = ''
+    // Request Destinations
+    async step1(message) {
+      try {
+        this.storeDestination = message.split(',')
+        let response = await this.$axios.post('/api/geocoding', {
+          destinations: this.storeDestination,
+        })
+
+        let geo = response.data.data
+        this.$store.dispatch('getDestination', geo)
+      } catch (error) {
+        console.log(error.response)
+      }
+      this.botReply(
+        `So your destinations are ${message}. If that correct please type "Confirm" to processing or "Reset" to reset the bot.`
+      )
       this.step++
     },
-    question2(message) {
-      this.storeDate = message.split('-')
-      this.reply =
-        'So you are going to ' +
-        this.storeDestination.join(',') +
-        ' during ' +
-        message +
-        '. Please type "Confirm" to process the trip. Or type "Reset to start new chat bot.'
-      this.messages.push({ data: this.reply, type: 'bot' })
-      this.reply = ''
-      this.step++
-    },
-    question3(message) {
+    // Confirm or Reset
+    async step2(message) {
       if (message === 'Confirm') {
-        console.log('api')
-        this.callApi()
+        await this.callApi()
       } else if (message === 'Reset') {
         this.resetBot()
       } else {
-        this.reply =
-          'We cannot understand ' +
-          message +
-          '. Please type "Confirm" or "Reset correctly"'
-        this.messages.push({ data: this.reply, type: 'bot' })
-        this.reply = ''
+        this.botReply(
+          `We cannot understand ${message} please type "Confirm" or "Reset" correctly`
+        )
+      }
+    },
+    async callApi() {
+      try {
+        let response = await this.$axios.post('/api/destinations', {
+          destinations: this.locations,
+        })
+        let forecasts = response.data.data
+        console.log(forecasts)
+        this.$store.dispatch('getForecasts', forecasts)
+      } catch (error) {
+        console.log(error.response)
       }
     },
   },

@@ -3,7 +3,12 @@
     <v-main>
       <v-container fluid>
         <v-row class="px-5 py-5 h-screen">
-          <v-col md="6"></v-col>
+          <v-col md="6">
+            <h1>Destinations</h1>
+            <Map />
+            <h1 class="mt-2">Results</h1>
+            <Forecast />
+          </v-col>
           <v-col md="6">
             <Chat />
           </v-col>
