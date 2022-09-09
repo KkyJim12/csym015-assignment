@@ -1,6 +1,8 @@
 <template>
-  <v-card class="px-5 py-2 h-full d-flex flex-column justify-space-between"
-    ><h1>Chat Bot {{ weatherByDestination }}</h1>
+  <v-card
+    max-height="100vh"
+    class="px-5 py-2 h-full d-flex flex-column justify-space-between"
+    ><h1>Chat Bot</h1>
     <v-sheet
       class="px-5 py-5 d-flex flex-column overflow-y-auto"
       color="secondary"
@@ -14,7 +16,7 @@
       </div>
     </v-sheet>
 
-    <v-form @submit.prevent="sendMessage()">
+    <v-form class="mt-2" @submit.prevent="sendMessage()">
       <v-row>
         <v-col md="10">
           <v-text-field
@@ -116,7 +118,7 @@ export default {
     startAsking() {
       this.botLoading = true
       this.ask =
-        'Hi, I am a climate bot advisor. I will forecast climate of locations you want to know. You can type the locations on the chat. You can use "," for many locations. For more accurate destination, you can use postcode to find a destination. You can type "Reset" any time to reset a bot.'
+        'Hi, I am a climate bot advisor. I will forecast climate of locations you want to know. You can type the locations on the chat. You can use "," for many locations. For more accurate destination, you can use postcode to find a destination. You can type "Reset" any time to reset a bot. (Maximum 4 cities to prevent request too much api !!.)'
       this.messages.push({ data: this.ask, type: 'bot' })
       this.ask = ''
       this.step++
@@ -155,6 +157,12 @@ export default {
     async step1(message) {
       try {
         this.storeDestination = message.split(',')
+
+        // Prevent too much request api limit by 4
+        if (message.split(',').length > 4) {
+          this.botReply(`Your request is more than 4 cities`)
+          return
+        }
         let response = await this.$axios.post('/api/geocoding', {
           destinations: this.storeDestination,
         })
@@ -261,6 +269,24 @@ export default {
       }
     },
     planTrip() {
+      let plans = this.searchAlgo()
+      this.botReply(`There are ${plans.length} ways to travel without rain.`)
+      for (let i = 0; i < plans.length; i++) {
+        let num = `${i + 1}`
+        let rep = []
+        let schedule = ''
+        for (let j = 0; j < plans[i].length; j++) {
+          let quote = `${plans[i][j].name} on ${
+            plans[i][j].date === 0
+              ? 'today'
+              : 'next ' + plans[i][j].date + 'day'
+          }`
+          rep.push(quote)
+        }
+        this.botReply(`${rep.join('->')}`)
+      }
+    },
+    searchAlgo() {
       // Factorial Function
       const permutator = (inputArr) => {
         let result = []
@@ -331,7 +357,7 @@ export default {
           }
         }
       }
-      console.log(ans)
+      return ans
     },
   },
 }

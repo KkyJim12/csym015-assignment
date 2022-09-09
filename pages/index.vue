@@ -3,8 +3,8 @@
     <v-main>
       <v-container fluid>
         <v-row class="px-5 py-5 h-screen">
-          <v-col md="6">
-            <h1>Destinations</h1>
+          <v-col style="max-height: 100vh" md="6">
+            <h1>City</h1>
             <Map />
             <h1 class="mt-2">Results</h1>
             <Forecast />

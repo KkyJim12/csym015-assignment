@@ -2,7 +2,7 @@
   <GmapMap
     ref="mapRef"
     :center="{ lat: locations[0].location.lat, lng: locations[0].location.lng }"
-    :zoom="5"
+    :zoom="4"
     map-type-id="terrain"
     style="width: 100%; height: 40%"
   >
