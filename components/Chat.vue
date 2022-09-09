@@ -1,11 +1,11 @@
 <template>
   <v-card class="px-5 py-2 h-full d-flex flex-column justify-space-between"
-    ><h1>Chat Bot</h1>
+    ><h1>Chat Bot {{ weatherByDestination }}</h1>
     <v-sheet
       class="px-5 py-5 d-flex flex-column overflow-y-auto"
       color="secondary"
       elevation="1"
-      height="80%"
+      height="80vh"
       width="100%"
       rounded
     >
@@ -39,6 +39,30 @@
   </v-card>
 </template>
 
+<style>
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: #686469 #ffffff;
+}
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 12px;
+}
+*::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #686469;
+  border-radius: 10px;
+  border: 3px solid #ffffff;
+}
+#chat-window {
+  scroll-behavior: smooth;
+}
+</style>
+
 <script>
 export default {
   computed: {
@@ -57,6 +81,7 @@ export default {
   },
   data() {
     return {
+      allPosibleWays: [],
       step: 0,
       botLoading: false,
       messages: [],
@@ -66,12 +91,15 @@ export default {
     }
   },
   methods: {
+    // Always scroll to bottom when overflow
+    scrollToBottom() {},
     // User send message to bot
     sendMessage() {
       // Check if input is empty
       if (this.messageBox === '' || this.botLoading) {
         return
       }
+
       this.messages.push({ data: this.messageBox, type: 'user' })
       this.botProcessing(this.messageBox)
       this.messageBox = ''
@@ -88,7 +116,7 @@ export default {
     startAsking() {
       this.botLoading = true
       this.ask =
-        'Hi, I am a bot climate advisor. I will forecast climate of locations you want to know. You can type the locations on the chat. You can use "," for many locations. For more accurate destination, you can use postcode to find a destination.'
+        'Hi, I am a climate bot advisor. I will forecast climate of locations you want to know. You can type the locations on the chat. You can use "," for many locations. For more accurate destination, you can use postcode to find a destination. You can type "Reset" any time to reset a bot.'
       this.messages.push({ data: this.ask, type: 'bot' })
       this.ask = ''
       this.step++
@@ -96,7 +124,12 @@ export default {
     },
     // Loading ui when bot is replying
     botProcessing(message) {
+      if (message === 'Reset') {
+        this.resetBot()
+        return
+      }
       this.processing(message)
+      this.scrollToBottom()
     },
     // Bot replying
     botReply(message) {
@@ -182,7 +215,7 @@ export default {
               this.weatherByDestination[x].data.length - 1
             } days.`
           } else {
-            if (rain[0] === 'r') {
+            if (rain[0] === 0) {
               advise = `For ${
                 this.weatherByDestination[x].name
               }, Only Today and next ${rain.slice(1).join(',')} days are rain.`
@@ -196,10 +229,10 @@ export default {
           }
           this.botReply(advise)
         }
-
+        this.botReply(
+          'Do you want me to plan a the trip for you to avoid raining? Type "Yes" to do it.'
+        )
         this.step++
-      } else if (message === 'Reset') {
-        this.resetBot()
       } else {
         this.botReply(
           `We cannot understand ${message} please type "Confirm" or "Reset" correctly`
@@ -207,7 +240,15 @@ export default {
       }
     },
 
-    step3(message) {},
+    step3(message) {
+      if (message === 'Yes') {
+        this.planTrip()
+      } else {
+        this.botReply(
+          'Sorry your input is not correct. Type "Yes" to plan a trip or "Reset" to reset the bot.'
+        )
+      }
+    },
     async callApi() {
       try {
         let response = await this.$axios.post('/api/destinations', {
@@ -218,6 +259,79 @@ export default {
       } catch (error) {
         this.botReply('There is something error.')
       }
+    },
+    planTrip() {
+      // Factorial Function
+      const permutator = (inputArr) => {
+        let result = []
+
+        const permute = (arr, m = []) => {
+          if (arr.length === 0) {
+            result.push(m)
+          } else {
+            for (let i = 0; i < arr.length; i++) {
+              let curr = arr.slice()
+              let next = curr.splice(i, 1)
+              permute(curr.slice(), m.concat(next))
+            }
+          }
+        }
+
+        permute(inputArr)
+
+        return result
+      }
+
+      // End Factorial Function
+
+      // Concat Array
+      const concatArray = (array) => {
+        let store = []
+        for (let x = 0; x < array.length; x++) {
+          for (let y = 0; y < array[x].data.length; y++) {
+            store.push(array[x].data[y])
+          }
+        }
+        return store
+      }
+      // End Concat Array
+
+      let swapPositions = permutator(this.weatherByDestination)
+
+      let ans = []
+
+      for (let i = 0; i < swapPositions.length; i++) {
+        let mergeData = concatArray(swapPositions[i])
+
+        for (
+          let x = 0;
+          x < swapPositions[i][0].data.length - swapPositions[i].length + 1;
+          x++
+        ) {
+          let store = []
+          let count = 0
+          for (
+            let j = x;
+            j < mergeData.length;
+            j += swapPositions[i][0].data.length + 1
+          ) {
+            if (mergeData[j] === 'r') {
+              break
+            }
+
+            store.push({
+              name: swapPositions[i][count].name,
+              value: mergeData[j],
+              date: j % swapPositions[i][0].data.length,
+            })
+            count++
+          }
+          if (count === swapPositions[i].length) {
+            ans.push(store)
+          }
+        }
+      }
+      console.log(ans)
     },
   },
 }
